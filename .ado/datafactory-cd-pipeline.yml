@@ -1,0 +1,37 @@
+name: datafactory-cd-pipeline-$(rev:r)
+
+
+trigger:
+  # none
+  branches:
+    include:
+      - 'main'
+      - 'master'
+      - 'release*'
+  paths:
+    include:
+      - $(FACTORY_GIT_ROOT_FOLDER)/*
+
+resources:
+  pipelines:
+  - pipeline: ciartifacts
+    source: datafactory-ci  # ci用のPipeline名に修正する
+
+variables:
+  - template: ../config-devops-prod.yml
+
+pool:
+  vmImage: "ubuntu-latest"
+
+stages:
+  - stage: Deploy
+    jobs:
+    - template: templates/jobs/datafactory-deploy.yml
+      parameters:
+        ENVIRONMENT_NAME: 'prod'
+        PREPOSTSCRIPT_FILEPATH: "ciartifacts/DatafactoryArmTemplates/PrePostDeploymentScript.ps1"
+        PARAMETER_FILEPATH: "ciartifacts/DatafactoryArmTemplates/params_prod.json"
+        DEPLOY_FILEPATH: "ciartifacts/DatafactoryArmTemplates/ARMTemplateForFactory.json"
+        RESTART_TRIGGER: true
+
+

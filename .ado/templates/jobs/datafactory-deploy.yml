@@ -1,0 +1,55 @@
+
+
+parameters:
+- name: ENVIRONMENT_NAME
+  type: string
+- name: PARAMETER_FILEPATH
+  type: string
+- name: DEPLOY_FILEPATH
+  type: string
+- name: PREPOSTSCRIPT_FILEPATH
+  type: string
+- name: RESTART_TRIGGER
+  type: string
+
+jobs:
+- deployment: deploy
+  displayName: "Deploy datafactory  using ARM Template"
+  environment: ${{ parameters.ENVIRONMENT_NAME }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+          - task: AzurePowerShell@5
+            displayName: "Pre-Deployment"
+            inputs:
+              azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+              ScriptType: 'FilePath'
+              ScriptPath: "$(Pipeline.Workspace)/${{ parameters.PREPOSTSCRIPT_FILEPATH }}"
+              ScriptArguments: '-armTemplate "$(Pipeline.Workspace)/${{ parameters.DEPLOY_FILEPATH }}" -ResourceGroupName "$(RESOURCE_GROUP_NAME)" -DataFactoryName "$(TARGET_DATAFACTORY)" -predeployment $true -deleteDeployment $false'
+              azurePowerShellVersion: 'LatestVersion' 
+          - task: AzureResourceManagerTemplateDeployment@3
+            name: ARM_deployment
+            displayName: "Datafactory Deployment"
+            enabled: true
+            continueOnError: false
+            inputs:
+              deploymentScope: "ResouceGroup"
+              ConnectedServiceName: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+              subscriptionId: $(AZURE_SUBSCRIPTION_ID)
+              resourceGroupName: $(RESOURCE_GROUP_NAME)
+              location: $(AZURE_LOCATION)
+              templateLocation: "Linked artifact"
+              csmFile: "$(Pipeline.Workspace)/${{ parameters.DEPLOY_FILEPATH }}"
+              csmParametersFile: "$(Pipeline.Workspace)/${{ parameters.PARAMETER_FILEPATH }}"
+              deploymentMode: "Incremental"
+              deploymentOutputs: 'armOutputs'
+          - task: AzurePowerShell@5
+            displayName: "Post-Deployment"
+            condition: eq(${{ parameters.RESTART_TRIGGER }}, true) 
+            inputs:
+              azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+              ScriptType: 'FilePath'
+              ScriptPath:  "$(Pipeline.Workspace)/${{ parameters.PREPOSTSCRIPT_FILEPATH }}"
+              ScriptArguments: '-armTemplate "$(Pipeline.Workspace)/${{ parameters.DEPLOY_FILEPATH }}" -ResourceGroupName "$(RESOURCE_GROUP_NAME)" -DataFactoryName "$(TARGET_DATAFACTORY)"  -predeployment $false -deleteDeployment $true'
+              azurePowerShellVersion: 'LatestVersion' 

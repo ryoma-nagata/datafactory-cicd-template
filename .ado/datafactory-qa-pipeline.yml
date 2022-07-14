@@ -1,0 +1,45 @@
+name: datafactory-qa-pipeline-$(rev:r)
+
+trigger:
+  none
+
+# pr: # PRトリガーはAzure Reposの場合、branch policyで実装します。https://docs.microsoft.com/ja-jp/azure/devops/pipelines/repos/azure-repos-git?view=azure-devops&tabs=yaml#pr-triggers
+  # branches:
+  #   include:
+  #     - 'main'
+  #     - 'release/*'
+
+
+variables:
+  - template: ../config-devops-dev.yml
+
+pool:
+  vmImage: "ubuntu-latest"
+
+stages:
+  - stage: Validation
+    jobs:
+      - job: Validation
+        displayName: "Validation of ADF"
+        steps:
+          # Installs Node and the npm packages saved in your package.json file in the build
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '14.x'
+            displayName: 'Install Node.js'
+
+          - task: Npm@1
+            inputs:
+              command: 'install'
+              workingDir: '$(Build.Repository.LocalPath)/packages' #replace with the package.json folder
+              verbose: true
+            displayName: 'Install npm package'
+          # Validates all of the Data Factory resources in the repository. You'll get the same validation errors as when "Validate All" is selected.
+          # Enter the appropriate subscription and name for the source factory.
+
+          - task: Npm@1
+            inputs:
+              command: 'custom'
+              workingDir: '$(Build.Repository.LocalPath)/packages' #replace with the package.json folder
+              customCommand: 'run build export $(Build.Repository.LocalPath)/$(FACTORY_GIT_ROOT_FOLDER) $(SOURCE_FACTORY_RESOURCE_ID)'
+            displayName: 'Validate'

@@ -1,0 +1,16 @@
+# Setup情報
+variables:
+  - name: AZURE_RESOURCE_MANAGER_CONNECTION_NAME
+    value: "azure-devops-service-connection" # Update to '{your ResourceManagerConnectionName}'
+  - name: AZURE_LOCATION
+    value: "japaneast"
+  - name: SOURCE_FACTORY_RESOURCE_ID
+    value: "" # Update to '{your SOURCE_FACTORY_RESOURCE_ID}'
+  - name: FACTORY_GIT_ROOT_FOLDER
+    value: "" # Update to '{your FACTORY_GIT_ROOT_FOLDER e.g. datafactory}'
+  - name: AZURE_SUBSCRIPTION_ID
+    value: "" # Update to '{your AZURE_SUBSCRIPTION_ID}'
+  - name: RESOURCE_GROUP_NAME
+    value: ""
+  - name: TARGET_DATAFACTORY
+    value: ""
